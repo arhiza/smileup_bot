@@ -1,0 +1,11 @@
+<form method="POST">{% csrf_token %}{{ form.as_p }}<button type="submit">Save</button>
+</form>
+{% if posts.count == 0 %}
+    Записей с цитатами нет
+{% else %}
+quote;link;status;nick_id<br>
+{% for post in posts %}
+    {{ post }};{{ post.link }};{{ post.status }};{{ post.nick_id }}<br>
+{% endfor %}
+{% endif %}
+
