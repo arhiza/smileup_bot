@@ -30,9 +30,9 @@ def reply_to_sender(sender_id, mes, bot, bot_user=None):
             print("Для пользователя", bot_user.nick_name, "бот выключен")
 
 # рассылка сообщений
-def send_messages(bot_info):
+def send_messages(bot_info, limit=4):
     bot = telebot.TeleBot(bot_info.token, threaded=False)
-    to_users = BotUser.objects.filter(next_message__lte=timezone.now()).filter(dialog=BotUser.IDLE) # TODO может быть, потом поставить ограничение на количество
+    to_users = BotUser.objects.filter(next_message__lte=timezone.now()).filter(dialog=BotUser.IDLE).order_by('next_message')[:limit]
     for bot_user in to_users:
         reply_to_sender(bot_user.nick_id, "", bot, bot_user)
 

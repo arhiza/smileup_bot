@@ -46,7 +46,7 @@ def csv(request, code=""):
         form = CSVForm()
         return render(request, "csv.html", {"posts": posts, "form": form})
     else:
-        return HttpResponse('Такой страницы нет, совсем нет.-{}-'.format(os.getenv("SECRET_URL")), status=404)
+        return HttpResponse('Такой страницы нет, совсем нет.', status=404)
 
 
 class PostForm(forms.ModelForm):
