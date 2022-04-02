@@ -54,7 +54,7 @@ def parse_command(text):
         return "", text
 
 def get_name(data_from, bot_info):
-    names = ['first_name', 'username']
+    names = ['username', 'first_name']  # TODO django.db.utils.OperationalError: (1366, "Incorrect string value: '\\xF0\\x9F\\x9A\\x80' for column 'nick_name' at row 1")
     for name in names:
         if name in data_from.keys():
             return data_from[name]
