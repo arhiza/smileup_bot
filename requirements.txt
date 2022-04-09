@@ -1,2 +1,4 @@
-telebot
+python-dotenv
+Django==2.2.7
 PyTelegramBotAPI
+
