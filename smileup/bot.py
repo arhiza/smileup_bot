@@ -92,6 +92,7 @@ def parse_input_message(request, data, bot_info):
                 bot_user.save()
             except:
                 print("Не удалось сохранить ник '{}' для пользователя {}".format(sender_name, sender_id))
+                bot_user.nick_name = "Anonymous"
 
         try:
             text = data['message']['text']
