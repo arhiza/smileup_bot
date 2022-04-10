@@ -53,15 +53,29 @@ def parse_command(text):
     else:
         return "", text
 
-def get_name(data_from, bot_info):
-    names = ['username', 'first_name']  # TODO django.db.utils.OperationalError: (1366, "Incorrect string value: '\\xF0\\x9F\\x9A\\x80' for column 'nick_name' at row 1")
+def get_sender(data_from, bot_info):
+    sender_id = data_from['id']
+    bot_user = BotUser.objects.filter(nick_id=sender_id).first()
+    is_new = False
+    if not bot_user:
+        is_new = True
+        bot_user = BotUser.objects.create(nick_id=sender_id)
+    names = ['first_name', 'username']
     for name in names:
         if name in data_from.keys():
-            return data_from[name]
+            if is_new:
+                try:
+                    bot_user.nick_name = data_from[name]
+                    bot_user.save()  # unicode-smiles могут не сохраниться в mysql
+                    return sender_id, data_from[name], bot_user
+                except:
+                    pass
+            else:
+                return sender_id, data_from[name], bot_user
     mes_err = "<code>ТЕХНИЧЕСКОЕ:</code> неочевидное поле для обращения - "+str(data_from)
     bot = telebot.TeleBot(bot_info.token, threaded=False)
     reply_to_sender(bot_info.id_telegram_owner, mes_err, bot)
-    return "Anonymous"
+    return sender_id, "Anonymous", bot_user
 
 # парсить сообщение, полученное ботом, выполнять команду, если это она, или отправлять просто ответ из базы данных
 def parse_input_message(request, data, bot_info):
@@ -80,19 +94,7 @@ def parse_input_message(request, data, bot_info):
             bot_user.save()
             print("Для пользователя", bot_user.nick_name, "бот выключен")
     else:
-        sender_id = data['message']['from']['id']
-        sender_name = get_name(data['message']['from'], bot_info)
-
-        #запоминаем к себе отправителя, даже если он в первый раз сумел зайти без команды "старт"
-        bot_user = BotUser.objects.filter(nick_id=sender_id).first()
-        if not bot_user:
-            bot_user = BotUser.objects.create(nick_id=sender_id)
-            try:
-                bot_user.nick_name = sender_name
-                bot_user.save()
-            except:
-                print("Не удалось сохранить ник '{}' для пользователя {}".format(sender_name, sender_id))
-                bot_user.nick_name = "Anonymous"
+        sender_id, sender_name, bot_user = get_sender(data['message']['from'], bot_info)
 
         try:
             text = data['message']['text']
@@ -104,7 +106,7 @@ def parse_input_message(request, data, bot_info):
             # выполняем команду
             if (command == "/add") or (command == "" and bot_user.dialog == BotUser.EXPECT_Q): #
                 quote = text
-                if len(quote)==0:
+                if len(quote) == 0:
                     # следующее сообщение от этого же отправителя распознать как цитату для добавления
                     mes = "Приготовил ручку и внимательно слушаю.\nОтправьте в сообщении либо <code>цитата</code>, либо <code>цитата # источник</code>"
                     bot_user.dialog = BotUser.EXPECT_Q
@@ -156,7 +158,7 @@ def parse_input_message(request, data, bot_info):
                 mes = "/add - добавить новую цитату (если что-то пойдет не так (опечатки и всё такое), запись можно будет отредактировать)\n/feedback - переслать сообщение хранителю бота\n/settings - настройки (включение-выключение источников цитат, выключение бота)"
 
             elif command in {"/start","/start@smileup_bot"}:
-                mes = "Hi, "+sender_name+". Приятно познакомиться!\n\nЯ - бот! Создан, чтобы делиться цитатами из книжек. Иногда (надеюсь, что не очень часто) делаю это сам, либо отправляю что-нибудь в ответ на запрос. Если нужен знак или что-то для улучшения настроения - просто напишите мне. Если не помогло - не относитесь серьезно, я все-таки бот.\n\n\nДля пополнения запаса цитат пользуйтесь командой <code>/add</code>, либо <code>/add цитата # источник</code>, как удобнее."
+                mes = "Hi, "+sender_name+". Приятно познакомиться!\n\nЯ - бот! Создан, чтобы делиться цитатами из книжек. Иногда (надеюсь, что не очень часто) делаю это сам, либо отправляю что-нибудь в ответ на запрос. Если нужен знак или что-то для улучшения настроения - просто напишите мне. Если не помогло - не относитесь серьезно, я все-таки бот.\n\n\nДля пополнения запаса цитат пользуйтесь командой <code>/add</code>."
 
             elif len(command)>0:
                 mes = "Не могу разобрать команду '"+command+"'"
