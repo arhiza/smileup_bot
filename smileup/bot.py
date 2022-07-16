@@ -81,18 +81,21 @@ def get_sender(data_from, bot_info):
 def parse_input_message(request, data, bot_info):
     print(data)
     if 'message' not in data.keys():
-        # сообщения типа таких - {'update_id': 111111111, 'my_chat_member':
-        #{'chat': {'id': 3333333333, 'first_name': 'КТО-ТО', 'last_name': 'КАКОЙ-ТО', 'username': 'никнейм', 'type': 'private'},
-        #'from': {'id': 3333333333, 'is_bot': False, 'first_name': 'КТО-ТО', 'last_name': 'КАКОЙ-ТО', 'username': 'никнейм', 'language_code': 'ru'},
-        #'date': 1628262710, 'old_chat_member': {'user': {'id': 9999999999, 'is_bot': True, 'first_name': 'SmileUp', 'username': 'smileup_bot'},
-        #'status': 'member'}, 'new_chat_member': {'user': {'id': 9999999999, 'is_bot': True, 'first_name': 'SmileUp', 'username': 'smileup_bot'},
-        #'status': 'kicked', 'until_date': 0}}} - это от телеграма про то, что бота удалили
-        sender_id = data['my_chat_member']['chat']['id']
-        bot_user = BotUser.objects.filter(nick_id=sender_id).first()
-        if bot_user:
-            bot_user.dialog = BotUser.STOP
-            bot_user.save()
-            print("Для пользователя", bot_user.nick_name, "бот выключен")
+        if 'edited_message' in data.keys():
+            mes = ''  # TODO разбираться с логикой "зачем отредактировали сообщение боту, и что на этом отвечать"
+        else:
+            # сообщения типа таких - {'update_id': 111111111, 'my_chat_member':
+            #{'chat': {'id': 3333333333, 'first_name': 'КТО-ТО', 'last_name': 'КАКОЙ-ТО', 'username': 'никнейм', 'type': 'private'},
+            #'from': {'id': 3333333333, 'is_bot': False, 'first_name': 'КТО-ТО', 'last_name': 'КАКОЙ-ТО', 'username': 'никнейм', 'language_code': 'ru'},
+            #'date': 1628262710, 'old_chat_member': {'user': {'id': 9999999999, 'is_bot': True, 'first_name': 'SmileUp', 'username': 'smileup_bot'},
+            #'status': 'member'}, 'new_chat_member': {'user': {'id': 9999999999, 'is_bot': True, 'first_name': 'SmileUp', 'username': 'smileup_bot'},
+            #'status': 'kicked', 'until_date': 0}}} - это от телеграма про то, что бота удалили
+            sender_id = data['my_chat_member']['chat']['id']
+            bot_user = BotUser.objects.filter(nick_id=sender_id).first()
+            if bot_user:
+                bot_user.dialog = BotUser.STOP
+                bot_user.save()
+                print("Для пользователя", bot_user.nick_name, "бот выключен")
     else:
         sender_id, sender_name, bot_user = get_sender(data['message']['from'], bot_info)
 
