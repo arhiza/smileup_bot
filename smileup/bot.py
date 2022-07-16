@@ -104,6 +104,7 @@ def parse_input_message(request, data, bot_info):
         except:
             text = None
         mes = ""
+        new_status = BotUser.IDLE
         if text or (bot_user.dialog == BotUser.EXPECT_F):
             command, text = parse_command(text)
             # выполняем команду
@@ -111,9 +112,10 @@ def parse_input_message(request, data, bot_info):
                 quote = text
                 if len(quote) == 0:
                     # следующее сообщение от этого же отправителя распознать как цитату для добавления
-                    mes = "Приготовил ручку и внимательно слушаю.\nОтправьте в сообщении либо <code>цитата</code>, либо <code>цитата # источник</code>"
-                    bot_user.dialog = BotUser.EXPECT_Q
-                    bot_user.save()
+                    mes = "Приготовил ручку и внимательно слушаю.\n"+\
+                          "Отправьте в сообщении либо <code>цитата</code>, либо <code>цитата # источник</code>\n"+\
+                          "Если передумали, нажмите /cancel"
+                    new_status = BotUser.EXPECT_Q
                 else:
                     quote = (quote+"#").split("#")
                     print(quote[0], quote[1])
@@ -122,22 +124,20 @@ def parse_input_message(request, data, bot_info):
                         status = Post.OK
                     rr = add_quote(quote=quote[0].strip(), nick_id=sender_id, link=quote[1].strip(), status=status)
                     link = request.build_absolute_uri(reverse('edit_quote', args=(str(rr[0]), rr[1])))
-                    mes = "Hi, "+sender_name+". Цитата добавлена, можно <a href='"+link+"'>отредактировать</a>."
-                    bot_user.dialog = BotUser.IDLE
-                    bot_user.save()
+                    mes = "Hi, "+sender_name+". Цитата добавлена, <a href='"+link+"'>тут можно отредактировать</a>."
 
             elif command == "/feedback" or (command == "" and bot_user.dialog == BotUser.EXPECT_F): #
                 if command == "/feedback" and len(text)==0:
-                    mes = "Следующее сообщение будет переслано создателю."
-                    bot_user.dialog = BotUser.EXPECT_F
-                    bot_user.save()
+                    mes = "Следующее сообщение будет переслано создателю.\nЕсли передумали, нажмите /cancel"
+                    new_status = BotUser.EXPECT_F
                 else: # пересылается либо следующее за командой сообщение целиком, либо сразу сообщение с командой, если в нем был еще и текст
                     bot = telebot.TeleBot(bot_info.token, threaded=False)
                     bot.forward_message(bot_info.id_telegram_owner, sender_id, data['message']['message_id'])
                     mes = "Спасибо! Сообщение переслано." #str(data['message']) #
-                    bot_user.dialog = BotUser.IDLE
-                    bot_user.save()
                     print("Переслано сообщение от user_id", sender_id)
+
+            elif command == "/cancel":
+                    mes = "OK"
 
             elif command == "/link":
                 if bot_user.need_link:
@@ -151,8 +151,7 @@ def parse_input_message(request, data, bot_info):
 
             elif command == "/stop":
                 mes = "Рассылка выключена. Чтобы включить обратно, напишите что-нибудь боту."
-                bot_user.dialog = BotUser.STOP
-                bot_user.save()
+                new_status = BotUser.STOP
 
             elif command == "/settings":
                 mes = "/link - включить/выключить отображение источников цитат\n/stop - выключить рассылку"
@@ -167,6 +166,8 @@ def parse_input_message(request, data, bot_info):
                 mes = "Не могу разобрать команду '"+command+"'"
 
         print(mes)
+        bot_user.dialog = new_status
+        bot_user.save()
         bot = telebot.TeleBot(bot_info.token, threaded=False)
         reply_to_sender(sender_id, mes, bot, bot_user)
     send_messages(bot_info) # и всем, кто молча ждет весточки, тоже что-нибудь поотправлять
