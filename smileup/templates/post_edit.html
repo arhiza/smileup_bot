@@ -7,6 +7,9 @@
 {% if edit_post %}
 <div class="alert alert-info text-center" role="alert">Запись успешно отредактирована</div>
 {% endif %}
+{% if error %}
+<div class="alert alert-info text-center" role="alert">Не удалось сохранить запись</div>
+{% endif %}
 
 <form method="POST">
 {% csrf_token %}

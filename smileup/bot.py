@@ -122,9 +122,13 @@ def parse_input_message(request, data, bot_info):
                     status = Post.NEW
                     if bot_info.id_telegram_owner == sender_id:
                         status = Post.OK
-                    rr = add_quote(quote=quote[0].strip(), nick_id=sender_id, link=quote[1].strip(), status=status)
-                    link = request.build_absolute_uri(reverse('edit_quote', args=(str(rr[0]), rr[1])))
-                    mes = "Hi, "+sender_name+". Цитата добавлена, <a href='"+link+"'>тут можно отредактировать</a>."
+                    try:
+                        rr = add_quote(quote=quote[0].strip(), nick_id=sender_id, link=quote[1].strip(), status=status)
+                        link = request.build_absolute_uri(reverse('edit_quote', args=(str(rr[0]), rr[1])))
+                        mes = "Hi, "+sender_name+". Цитата добавлена, <a href='"+link+"'>тут можно отредактировать</a>."
+                    except:
+                        mes = "Не удалось добавить цитату. Попробуйте еще раз, или нажмите /cancel"
+                        new_status = BotUser.EXPECT_Q
 
             elif command == "/feedback" or (command == "" and bot_user.dialog == BotUser.EXPECT_F): #
                 if command == "/feedback" and len(text)==0:

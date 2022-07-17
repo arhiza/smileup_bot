@@ -63,13 +63,16 @@ def quote(request, id, code=""):
         else:
             form = PostForm(request.POST, instance=post)
             if form.is_valid():
-                post = form.save(commit=False)
-                post.status = Post.EDIT
-                post.save()
+                try:
+                    post = form.save(commit=False)
+                    post.status = Post.EDIT
+                    post.save()
+                except:
+                    return render(request, "post_edit.html", {"form": form, "error": True})
             return render(request, "post_edit.html", {"form": form, "edit_post": True}) #redirect('db')
         return render(request, "post_edit.html", {"form": form})
     else:
-        return HttpResponse('Что-то в запросе неверно, скорее всего - код<br>id={}, code={}'.format(id, code), status=404)
+        return HttpResponse('Такой записи нет, либо вы не можете ее редактировать', status=404)
 
 
 @csrf_exempt
