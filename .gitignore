@@ -6,3 +6,5 @@ db.sqlite3
 /static
 .DS_Store
 *.json
+/env
+.idea/
