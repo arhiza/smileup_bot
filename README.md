@@ -10,3 +10,14 @@
 
 
 @smileup_bot - бот работающий, хранит цитаты из книжек
+
+
+---
+## импорт-экспорт данных
+сохранить содержимое таблиц пользователей и цитат в файл в корне проекта:
+
+`python3.6 manage.py dumpdata smileup.BotUser smileup.Post --format json -o smileup.json`
+
+загрузка данных обратно в базу:
+
+`python manage.py loaddata smileup.json`
