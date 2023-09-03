@@ -46,19 +46,29 @@ class MockExample(TestCase):
     def setUpTestData(cls):
         Post.objects.create(quote="TEST QUOTE", status="OK")
 
+    def tearDown(self):
+        self.bot.reset_mock()
+        self.bot_fail.reset_mock()
+
     def test_simple_sending(self):
-        #reply_to_sender(12345, "", self.bot)
-        #reply_to_sender(67890, "", self.bot_fail)
         stdout_test = io.StringIO()
         with Redirect(stdout=stdout_test):
             reply_to_sender(12, "Message from bot delivered", self.bot)
         self.bot.send_message.assert_called_once_with(12, 'Message from bot delivered', parse_mode='HTML')
-        self.bot.reset_mock()  # TODO tear_down
         self.assertEqual(stdout_test.getvalue(), "")  # сообщение отправилось адресату, никаких уведомлений об ошибке
-
         with Redirect(stdout=stdout_test):
             reply_to_sender(67, "Message from bot not delivered", self.bot_fail)
         self.bot_fail.send_message.assert_called_once_with(67, 'Message from bot not delivered', parse_mode='HTML')
-        self.bot_fail.reset_mock()  # TODO tear_down
         self.assertIn("Не удалось отправить сообщение", stdout_test.getvalue())
-        
+
+    def test_sending_from_database(self):
+        stdout_test = io.StringIO()
+        with Redirect(stdout=stdout_test):
+            reply_to_sender(12, "", self.bot)
+        self.bot.send_message.assert_called_once_with(12, 'TEST QUOTE', parse_mode='HTML')
+        self.assertEqual(stdout_test.getvalue(), "")  # сообщение отправилось адресату, никаких уведомлений об ошибке
+        with Redirect(stdout=stdout_test):
+            reply_to_sender(67, "", self.bot_fail)
+        self.bot_fail.send_message.assert_called_once_with(67, 'TEST QUOTE', parse_mode='HTML')
+        self.assertIn("Не удалось отправить сообщение", stdout_test.getvalue())
+
