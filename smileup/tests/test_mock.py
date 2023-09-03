@@ -95,4 +95,13 @@ class TestManageCommand(TestCase):
         self.assertEqual(len(self.bot.mock_calls), 3)  # создать бота; отправить в него сообщение со статистикой; создать бота для рассылки (по пустому списку пользователей, так что ничего не отправляется)
         # print(tuple(self.bot.mock_calls[1]))  # (что вызывалось, с какими позиционными параметрами, с какими именованными параметрами)
         self.assertIn("активных/неактивных пользователей - 0/0, в очереди на отправку - 0, новых/отредактированных записей - 0/0", tuple(self.bot.mock_calls[1])[1][1])
-        
+
+    @patch_bot
+    def test_new_quote(self):
+        post = Post.objects.create(quote="TEST QUOTE", status="NEW")
+        Command().handle()
+        self.assertEqual(len(self.bot.mock_calls), 3)  # создать бота; отправить в него сообщение со статистикой; создать бота для рассылки (по пустому списку пользователей, так что ничего не отправляется)
+        self.assertIn("активных/неактивных пользователей - 0/0, в очереди на отправку - 0, новых/отредактированных записей - 1/0", tuple(self.bot.mock_calls[1])[1][1])
+        self.assertIn("/admin/smileup/post/1/change/", tuple(self.bot.mock_calls[1])[1][1])
+        post.delete()
+
