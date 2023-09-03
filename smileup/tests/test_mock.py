@@ -1,10 +1,12 @@
 import io
 import sys
+import traceback
 from django.test import TestCase
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock, patch
 
 from smileup.bot import reply_to_sender
-from smileup.models import Post
+from smileup.models import Post, Bot_info
+from smileup.management.commands.send_to_all import Command
 
 
 class Redirect:
@@ -72,3 +74,25 @@ class MockExample(TestCase):
         self.bot_fail.send_message.assert_called_once_with(67, 'TEST QUOTE', parse_mode='HTML')
         self.assertIn("Не удалось отправить сообщение", stdout_test.getvalue())
 
+
+class TestManageCommand(TestCase):
+    bot = Mock()
+    patch_bot = patch("telebot.TeleBot", bot)
+
+    @classmethod
+    def setUpTestData(cls):
+        Bot_info.objects.create(nickname="smileup_bot", token="no_token", id_telegram_owner=12345)
+
+    def tearDown(self):
+        self.bot.reset_mock()
+    
+    @patch_bot
+    def test_empty_database(self):
+        stdout_test = io.StringIO()
+        with Redirect(stdout=stdout_test):
+            Command().handle()
+        # print(stdout_test.getvalue())
+        self.assertEqual(len(self.bot.mock_calls), 3)  # создать бота; отправить в него сообщение со статистикой; создать бота для рассылки (по пустому списку пользователей, так что ничего не отправляется)
+        # print(tuple(self.bot.mock_calls[1]))  # (что вызывалось, с какими позиционными параметрами, с какими именованными параметрами)
+        self.assertIn("активных/неактивных пользователей - 0/0, в очереди на отправку - 0, новых/отредактированных записей - 0/0", tuple(self.bot.mock_calls[1])[1][1])
+        

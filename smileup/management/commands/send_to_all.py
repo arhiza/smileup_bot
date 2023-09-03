@@ -8,8 +8,8 @@ from django.utils import timezone
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        bot_info = Bot_info.objects.get(nickname="smileup_bot")
-        if bot_info:
+        try:
+            bot_info = Bot_info.objects.get(nickname="smileup_bot")
             count_active_users = BotUser.objects.filter(dialog=BotUser.IDLE).count()
             count_not_active_users = BotUser.objects.exclude(dialog=BotUser.IDLE).count()
             count_line = BotUser.objects.filter(next_message__lte=timezone.now()).filter(dialog=BotUser.IDLE).count()
@@ -23,6 +23,6 @@ class Command(BaseCommand):
             reply_to_sender(bot_info.id_telegram_owner, mes_stat, bot)
 
             send_messages(bot_info, limit=20)
-        else:
+        except Bot_info.DoesNotExist:
             self.stdout.write('Информация о боте SmileUp не найдена.')
 
